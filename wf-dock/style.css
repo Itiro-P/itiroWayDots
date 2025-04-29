@@ -1,0 +1,11 @@
+button:hover {
+  background-color: #b4befe;
+}
+
+button:active {
+  background-color: #89b4fa;
+}
+window {
+  background-color: #1e1e2e;
+  border-radius: 8px;
+}
