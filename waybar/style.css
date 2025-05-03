@@ -65,9 +65,19 @@ window#waybar {
 	color: @peach;
 }
 
-#battery {
-	color: @yellow;
+.battery {
+	background-color: @yellow;
+	transition: background-color 0.3s ease;
 }
+.battery.warning {
+	background-color: @peach;
+	transition: background-color 0.3s ease;
+}
+  .battery.critical {
+	background-color: @red;
+	transition: background-color 0.3s ease;
+}
+
 
 #clock,
 #pulseaudio,

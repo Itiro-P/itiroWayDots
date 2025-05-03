@@ -30,9 +30,14 @@
 	},
 	"group/cavaMusic": {
 		"orientation": "horizontal",
+		"drawer": {
+			"transition-duration": 500,
+			"children-class": "not-power",
+			"transition-left-to-right": false
+		},
 		"modules": [
-			"mpris",
-			"cava"
+            "cava",
+			"mpris"
 		]
 	},
 	"group/sysResources": {
@@ -66,7 +71,7 @@
                 ""
             ]
         },
-        "scroll-step": 5,
+        "scroll-step": 2,
         "on-click": "pamixer -t",
         "on-click-right": "pavucontrol"
     },
@@ -111,11 +116,11 @@
 	"cava": {
         "framerate": 60,
         "autosens": 0,
-		"sensitivity": 8,
+	"sensitivity": 8,
         "bars": 14,
         "lower_cutoff_freq": 50,
         "higher_cutoff_freq": 10000,
-        "method": "pulse",
+        "method": "pipewire",
         "source": "auto",
         "stereo": false,
         "reverse": false,
@@ -123,7 +128,6 @@
         "waves": false,
         "noise_reduction": 0.5,
         "input_delay": 1,
-        "format-icons" : ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" ],
-        "actions": { "on-click-right": "mode" }
+        "format-icons" : ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" ]
     }
 }
