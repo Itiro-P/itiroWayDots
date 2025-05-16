@@ -1,3 +1,7 @@
+button {
+  border: 1px solid #1e1e2e;
+}
+
 button:hover {
   background-color: #b4befe;
 }
@@ -7,5 +11,5 @@ button:active {
 }
 window {
   background-color: #1e1e2e;
-  border-radius: 8px;
+  border-radius: 10px;
 }
