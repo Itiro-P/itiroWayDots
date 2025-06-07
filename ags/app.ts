@@ -1,12 +1,21 @@
-import { App } from "astal/gtk4"
+import { App, Gdk, Gtk } from "astal/gtk4"
 import style from "./style.scss"
 import Bar from "./widget/Bar"
 import Background from "./widget/Background"
 
 App.start({
-    css: style,
+    instanceName: "AgsEcosystem",
+    css: "",
     main() {
-        App.get_monitors().map(Bar);
-        App.get_monitors().map(Background);
-    },
+        const provider = new Gtk.CssProvider();
+        provider.load_from_string(style);
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default()!, provider, Gtk.STYLE_PROVIDER_PRIORITY_USER);
+
+        App.get_monitors().map(
+            (monitor) => {
+                Bar(monitor);
+                Background(monitor);
+            }
+        );
+    }
 })

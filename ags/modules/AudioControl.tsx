@@ -15,7 +15,7 @@ export default function AudioControl() {
         click.right.connect("pressed", () => { GLib.spawn_command_line_async("pavucontrol") } )
     ];
     return (
-        <box 
+        <box
             cssClasses={[ "AudioControl" ]}
             setup={
                 (self) => {
@@ -33,12 +33,12 @@ export default function AudioControl() {
             }
             tooltipText={ bind(audio, "description").as(n => `Dispositivo atual: ${n}`) }
         >
-            <image 
-                cssClasses={[ "AudioControlBtn" ]} 
+            <image
+                cssClasses={[ "AudioControlBtn" ]}
                 iconName={ bind(audio, "volumeIcon") }
             />
-            <label 
-                cssClasses={[ "LabelAudioControl" ]} 
+            <label
+                cssClasses={[ "LabelAudioControl" ]}
                 label={ bind(audio, "volume").as(a => `${Math.round(a * 100)}%`) }
             />
         </box>

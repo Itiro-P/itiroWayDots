@@ -1,6 +1,6 @@
 import { App, Astal, Gtk, Gdk } from "astal/gtk4";
 import { DateTime } from "../modules/DateTime";
-import CavaBackground from "../modules/Cava";
+import Media from "../modules/Media";
 
 export default function Background(gdkmonitor: Gdk.Monitor) {
     const { BOTTOM, RIGHT, LEFT } = Astal.WindowAnchor
@@ -17,7 +17,7 @@ export default function Background(gdkmonitor: Gdk.Monitor) {
         >
             <centerbox cssClasses={["Background"]} halign={Gtk.Align.FILL}>
                 <box cssClasses={[ "BackgroundLeftModules" ]} halign={ Gtk.Align.START }>
-                    <CavaBackground />
+                    <Media />
                 </box>
                 <box cssClasses={[ "BackgroundLeftModules" ]} halign={ Gtk.Align.CENTER } hexpand>
                     

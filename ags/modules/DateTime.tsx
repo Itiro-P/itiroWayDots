@@ -1,13 +1,8 @@
 import { Gtk } from "astal/gtk4"
-import { Variable, bind } from "astal"
-import { astalify, type ConstructProps } from "astal/gtk4";
+import { Variable, bind, timeout } from "astal"
+import { astalify } from "astal/gtk4";
 
-const time = Variable(
-    {
-        clock: "",
-        date: ""
-    }
-).poll(60_000, 
+const time = Variable({ clock: "", date: "" }).poll(60_000,
     () => {
         const dateConstructor = new Date();
         return {
@@ -17,7 +12,6 @@ const time = Variable(
     }
 );
 
-type CalendarProps = ConstructProps<Gtk.Calendar, Gtk.Calendar.ConstructorProps>
 const Calendar = astalify<Gtk.Calendar, Gtk.Calendar.ConstructorProps>(Gtk.Calendar, {
     getChildren(self) { return [] },
     setChildren(self, children) {},
@@ -46,9 +40,9 @@ function MenuCalendar() {
 
 export function DateTime() {
     return (
-        <box 
-            cssClasses={[ "DateTime" ]} 
-            orientation={ Gtk.Orientation.VERTICAL } 
+        <box
+            cssClasses={[ "DateTime" ]}
+            orientation={ Gtk.Orientation.VERTICAL }
             onDestroy={() => { time.drop(); }}
         >
             <menubutton cssClasses={[ "Time" ]} halign={ Gtk.Align.END }>
@@ -63,7 +57,32 @@ export function DateTime() {
 }
 
 export function MiniTime() {
-    return (
-        <label cssClasses={[ "MiniTime" ]} onDestroy={() => { time.drop(); }} label={ bind(time).as(t => `${t.clock}`) } />
-    );
+  const shouldReveal = Variable(false);
+  const transitionSpeed = 750;
+
+  function toggleReveal() { shouldReveal.set(!shouldReveal.get()) }
+
+  return (
+      <box
+        cssClasses={[ "MiniTime" ]}
+        onDestroy={ () => { time.drop(); shouldReveal.drop() } }
+        onHoverEnter={ () => toggleReveal() }
+        onHoverLeave={ () => toggleReveal() }
+      >
+        <revealer
+          revealChild = { bind(shouldReveal).as(s => !s) }
+          transitionType={ Gtk.RevealerTransitionType.SLIDE_LEFT }
+          transitionDuration={ transitionSpeed/4 }
+        >
+          <label label={ bind(time).as(t => `${t.clock}`) } />
+        </revealer>
+        <revealer
+          revealChild = { bind(shouldReveal).as(s => s) }
+          transitionType={ Gtk.RevealerTransitionType.SLIDE_RIGHT }
+          transitionDuration={ transitionSpeed }
+        >
+        <label label={ bind(time).as(t => `Hoje é: ${t.date}`) } />
+        </revealer>
+      </box>
+  );
 }

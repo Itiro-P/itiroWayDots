@@ -1,62 +1,59 @@
-import { hook, Gtk, Gdk } from "astal/gtk4";
+import { Gtk, Gdk } from "astal/gtk4";
 import Tray from "gi://AstalTray";
 import { bind } from "astal";
 
-function TrayItem({ item }: { item: Tray.TrayItem }) {
-    const button = (
-        <button
+function TrayItem({ item }: { item: InstanceType<typeof Tray.TrayItem> }) {
+    let handlers = {
+        primary: 0,
+        middle: 0,
+        secondary: 0,
+        menuModel: 0,
+        actionG: 0
+    };
+    const clickPrimary = new Gtk.GestureClick({ button: Gdk.BUTTON_PRIMARY });
+    const clickSecondary = new Gtk.GestureClick({ button: Gdk.BUTTON_SECONDARY });
+    const clickMiddle = new Gtk.GestureClick({ button: Gdk.BUTTON_MIDDLE });
+
+    return (
+        <menubutton
             cssClasses={[ "TrayItem" ]}
-            tooltipText={bind(item, "tooltipMarkup")}
+            tooltipText={ bind(item, "tooltipMarkup") }
+            menuModel={ item.menuModel }
+            usePopover={ true }
+            direction={ Gtk.ArrowType.DOWN }
+            setup={
+                (self) => {
+                        handlers = {
+                            primary: clickPrimary.connect("pressed", (_self, _n, x, y) => { if(item.is_menu) self.get_popover()!.popup(); else item.activate(x, y); }),
+                            middle: clickMiddle.connect("pressed", (_self, _n, x, y) => { item.secondary_activate(x, y); }),
+                            secondary:  clickSecondary.connect("pressed", () => { item.about_to_show(); self.get_popover()!.popup(); }),
+                            menuModel: item.connect("notify::menu-model", () => { self.set_menu_model(item.menuModel); }),
+                            actionG: item.connect("notify::action-group", () => { self.insert_action_group("dbusmenu", item.actionGroup); })
+                        };
+                        
+                        
+                        self.add_controller(clickPrimary);
+                        self.add_controller(clickMiddle);
+                        self.add_controller(clickSecondary);
+                    }
+                }
+            onDestroy={
+                (self) => {
+                    clickPrimary.disconnect(handlers.primary);
+                    clickMiddle.disconnect(handlers.middle);
+                    clickSecondary.disconnect(handlers.secondary);
+                    item.disconnect(handlers.menuModel);
+                    item.disconnect(handlers.actionG);
+                    self.remove_controller(clickPrimary);
+                    self.remove_controller(clickMiddle);
+                    self.remove_controller(clickSecondary);
+                }
+            }
+            
         >
-            <image
-                gicon={bind(item, "gicon")}
-                pixelSize={16}
-            />
-        </button>
-    ) as Gtk.Button;
-
-    // Configuração do Popover
-    const popover = new Gtk.PopoverMenu();
-    popover.set_menu_model(item.menuModel);
-    popover.set_parent(button);
-    popover.set_position(Gtk.PositionType.RIGHT);
-
-    // Controladores de Eventos
-    const primaryClick = new Gtk.GestureClick();
-    primaryClick.set_button(Gdk.BUTTON_PRIMARY);
-    
-    const secondaryClick = new Gtk.GestureClick();
-    secondaryClick.set_button(Gdk.BUTTON_SECONDARY);
-
-    // Middle click support
-    const middleClick = new Gtk.GestureClick();
-    middleClick.set_button(Gdk.BUTTON_MIDDLE);
-
-    const handlersClick = [
-        primaryClick.connect("pressed", (_, _n, x, y) => { if (item.is_menu) { popover.popup(); } else { item.activate(x, y); } }),
-        secondaryClick.connect("pressed", () => { item.about_to_show(); popover.popup(); }),
-        middleClick.connect("pressed", (_, _n, x, y) => { item.secondary_activate(x, y); })
-    ];
-
-    button.add_controller(primaryClick);
-    button.add_controller(secondaryClick);
-    button.add_controller(middleClick);
-
-    const handlerActions = [
-        item.connect("notify::menu-model", () => { popover.set_menu_model(item.menuModel); }),
-        item.connect("notify::action-group", () => { button.insert_action_group("dbusmenu", item.actionGroup); })
-    ];
-    
-
-    
-
-    // Cleanup
-    button.connect("destroy", () => {
-        handlersClick.forEach((h: number) => button.disconnect(h));
-        handlerActions.forEach((h: number) => item.disconnect(h));
-        popover.unparent();
-    });
-    return button;
+        <image gicon={bind(item, "gicon")} pixelSize={16} />
+        </menubutton>
+    ) as Gtk.MenuButton;
 }
 
 export default function SystemTray() {

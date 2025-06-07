@@ -27,21 +27,23 @@ $crust:       #11111b;
 
 $font: 16px;
 
-// Reset everything and global options
-
-* {
+button, button *, popover, popover *, * {
     font-family: 'Monospace';
     font-size: $font;
     -gtk-icon-size: $font;
-    color: $text;
-    background: none;
-    transition: all 0.2s ease;
 
-    padding: 0px;
-    margin: 0px;
-    // Debugging
-    //border: 1px solid;
+    color: $text;
+    background: transparent;
+
+    border-width: 0;
+    border-style: none;
+    box-shadow: none;
+    outline: none;
+
+    margin: 0;
+    padding: 0;
 }
+
 
 .Background {
     padding: 20px;
@@ -51,42 +53,42 @@ $font: 16px;
     transition: all 0.2s ease-in-out;
     opacity: 0.5;
 
-    .CavaBackground {
+    .Media {
         border: 2px solid $sapphire;
         border-radius: 10px;
         background-color: $base;
-        .CavaContainer {
-            color: $sapphire;
-        }
-        .Media {
+        * { transition: all 0.2s ease-in-out; }
+        .MprisInfo {
             padding: 5px;
             border-radius: 0 0 7px 7px;
-            .MediaLabel {
-                border-radius: 0;
-            }
-        }
-        .MediaPlaying {
-            background-color: $sapphire;
-            .MediaLabel {
-                color: $base;
-            }
-            &:hover {
-                background-color: $base;
-                .MediaLabel {
-                    color: $sapphire;
-                }    
-            }
-        }
-        .MediaNotPlaying {
             background-color: $base;
-            .MediaLabel {
-                color: $sapphire;
-            }
-            &:hover {
+            .MprisLabel { color: $sapphire; }
+        }
+        .CavaContainer {
+            border-radius: 6px 6px 0px 0px;
+            color: $sapphire;
+            background: none;
+        }
+    }
+
+    .MediaPlaying {
+        .CavaContainer {
+            color: $sapphire;
+            background: none;
+        }
+        .MprisInfo{
+            background-color: $sapphire;
+            .MprisLabel { color: $base; }
+        }
+
+        &:hover {
+            .CavaContainer {
+                color: $base;
                 background-color: $sapphire;
-                .MediaLabel {
-                    color: $base;
-                }   
+            }
+            .MprisInfo{
+                background-color: $base;
+                .MprisLabel { color: $sapphire; }
             }
         }
     }
@@ -97,10 +99,6 @@ $font: 16px;
             border-radius: 10px;
         }
         .Time {
-            button {
-                outline: none;
-                box-shadow: none;
-            }
             .TimeLabel {
                 font-weight: bold;
                 font-size: 90px;
@@ -108,8 +106,8 @@ $font: 16px;
             transition: all 0.2s ease-in-out;
             popover > contents {
                 padding: 5px;
-                background: $mantle;
-                border: 1px solid $sapphire;
+                background: $surface0;
+                border: 2px solid $sapphire;
 
                 .CalendarContainer {
                     background-color: $base;
@@ -154,10 +152,6 @@ $font: 16px;
     margin: 0px 2px;
 }
 
-.Network {
-    padding: 0px 4px;
-}
-
 .CpuUsage, .MemoryUsage, .Battery , .IconBtn, .LabelAudioControl, .AudioControlBtn, .TrayItem, .Wired, .Wifi, .MiniTime {
     padding: 1px 4px;
 }
@@ -181,7 +175,7 @@ $font: 16px;
 .Battery {
     .BatteryIcon, .BatteryLabel {
         color: $lavender;
-    } 
+    }
 }
 
 .BatteryCritical {
@@ -191,43 +185,37 @@ $font: 16px;
 }
 
 .TrayItem {
-    popover {
-        *{
-            outline: none;
-            box-shadow: none;
-        }        
-    }
-
-    popover.background {
-        background: none;
-    }
     popover.menu {
-        background-color: $crust;
+        margin: 10px;
+        background-color: $surface0;
         border-radius: 10px;
-        padding: 0px;
+        padding: 5px;
     }
 
     popover.menu > contents {
-        padding: 2px 0;
+        padding: 5px;
     }
 
     popover.menu modelbutton {
-        padding: 2px 0px;
-        transition: all 0.1s ease;
+        padding: 2px;
         border-radius: 4px;
         margin: 0 2px;
     }
 
     popover.menu modelbutton:hover {
-        background: rgba($base, 0.1);
+        background: rgba($surface1, 0.2);
     }
 
     popover.menu modelbutton:active {
-        background: rgba($base, 0.2);
+        background: rgba($surface1, 0.4);
     }
+}
 
-    popover.menu separator {
-        background: rgba($base, 0.1);
-        margin: 1px 0;
-    }
+tooltip {
+  background-color: $base;
+  color: $text;
+  border-radius: 8px;
+  padding: 8px 12px;
+  border: 1px solid $surface0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
