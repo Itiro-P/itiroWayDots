@@ -1,6 +1,6 @@
 import { Gtk, Gdk } from "astal/gtk4";
 import Mpris from "gi://AstalMpris";
-import { GLib, Variable, bind } from "astal";
+import { GLib, GObject, Variable, bind } from "astal";
 import CavaContainer from "./Cava";
 
 const mediaState = Variable(
@@ -12,24 +12,26 @@ const mediaState = Variable(
   }
 );
 
-let updateTimeout: GLib.Source | null = null;
+let updateTimeout: number | null = null;
 const DEBOUNCE_DELAY = 100;
 
 const mpris = Mpris.get_default();
 
 function disconnectFromPlayer() {
   const state = mediaState.get();
-  
+
   // Cancela qualquer atualização pendente
   if (updateTimeout) {
-    clearTimeout(updateTimeout);
+    GLib.source_remove(updateTimeout);
     updateTimeout = null;
   }
-  
+
   if (state.lastPlayer && state.handlers.length > 0) {
     // Desconecta todos os handlers
     state.handlers.forEach(handler => {
-      state.lastPlayer!.disconnect(handler);
+      if (state.lastPlayer && GObject.signal_handler_is_connected(state.lastPlayer, handler)) {
+        state.lastPlayer.disconnect(handler);
+      }
     });
   }
   mediaState.set({
@@ -46,6 +48,12 @@ function connectToPlayer(player: Mpris.Player) {
 
   if (!player) return;
 
+  // Verifica se o player ainda é válido antes de conectar
+  try {
+    if (!player.busName) return;
+  } catch {
+    return;
+  }
 
   // Conecta múltiplos sinais para maior confiabilidade
   const handlers = [
@@ -76,17 +84,19 @@ function connectToPlayer(player: Mpris.Player) {
 
 function updateMediaState(player: Mpris.Player | null) {
   if (updateTimeout) {
-    clearTimeout(updateTimeout);
+    GLib.source_remove(updateTimeout);
+    updateTimeout = null;
   }
-  
-  updateTimeout = setTimeout(() => {
+
+  updateTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DEBOUNCE_DELAY, () => {
     executeUpdateMediaState(player);
     updateTimeout = null;
-  }, DEBOUNCE_DELAY);
+    return GLib.SOURCE_REMOVE;
+  });
 }
 
 function executeUpdateMediaState(player: Mpris.Player | null) {
-  
+
   if (!player) {
     mediaState.set({
       ...mediaState.get(),
@@ -151,7 +161,7 @@ function executeUpdateMediaState(player: Mpris.Player | null) {
 
 function findBestPlayer(): Mpris.Player | null {
   const players = mpris.players;
-  
+
   if (players.length === 0) return null;
 
   const validPlayers = players.filter(p => {
@@ -171,7 +181,7 @@ function findBestPlayer(): Mpris.Player | null {
       return false;
     }
   });
-  
+
   if (playingPlayer) {
     return playingPlayer;
   }
@@ -183,7 +193,7 @@ function findBestPlayer(): Mpris.Player | null {
       return false;
     }
   });
-  
+
   if (pausedPlayer) {
     return pausedPlayer;
   }
@@ -201,48 +211,49 @@ function initializeMpris() {
   }
 }
 
+let mprisHandlers: number[] = [];
 
+function setupMprisHandlers() {
+  mprisHandlers = [
+    mpris.connect("player-added", (_, player: Mpris.Player) => {
+      const currentPlayer = mediaState.get().lastPlayer;
 
-// Handlers do MPRIS
-const mprisHandlers = [
-  mpris.connect("player-added", (_, player: Mpris.Player) => {
-    const currentPlayer = mediaState.get().lastPlayer;
-    
-    if (!currentPlayer) {
-      connectToPlayer(player);
-    } else {
-      try {
-        if (player.playbackStatus === Mpris.PlaybackStatus.PLAYING) {
-          connectToPlayer(player);
-        }
-      } catch (error) {
-        console.warn("Erro ao verificar status do novo player:", error);
-      }
-    }
-  }),
-
-  mpris.connect("player-closed", (_, player: Mpris.Player) => {
-    const currentPlayer = mediaState.get().lastPlayer;
-
-    if (currentPlayer === player) {
-      const nextPlayer = findBestPlayer();
-      if (nextPlayer) {
-        connectToPlayer(nextPlayer);
+      if (!currentPlayer) {
+        connectToPlayer(player);
       } else {
-        disconnectFromPlayer();
+        try {
+          if (player.playbackStatus === Mpris.PlaybackStatus.PLAYING) {
+            connectToPlayer(player);
+          }
+        } catch (error) {
+          console.warn("Erro ao verificar status do novo player:", error);
+        }
       }
-    }
-  })
-];
+    }),
+
+    mpris.connect("player-closed", (_, player: Mpris.Player) => {
+      const currentPlayer = mediaState.get().lastPlayer;
+
+      if (currentPlayer === player) {
+        const nextPlayer = findBestPlayer();
+        if (nextPlayer) {
+          connectToPlayer(nextPlayer);
+        } else {
+          disconnectFromPlayer();
+        }
+      }
+    })
+  ];
+}
 
 function MprisInfo() {
   return (
     <box cssClasses={["MprisInfo"]} vexpand>
-      <label 
-        cssClasses={["MprisLabel"]} 
-        label={bind(mediaState).as(c => c.currentState)} 
-        ellipsize={3} 
-        maxWidthChars={75} 
+      <label
+        cssClasses={["MprisLabel"]}
+        label={bind(mediaState).as(c => c.currentState)}
+        ellipsize={3}
+        maxWidthChars={75}
       />
     </box>
   );
@@ -251,6 +262,7 @@ function MprisInfo() {
 export default function Media() {
   // Inicializa o MPRIS quando o componente é criado
   initializeMpris();
+  setupMprisHandlers();
 
   return (
     <box
@@ -259,23 +271,41 @@ export default function Media() {
       setup={(self) => {
         const click = new Gtk.GestureClick();
         click.set_button(Gdk.BUTTON_PRIMARY);
-        click.connect("pressed", () => {
+        const clickHandler = click.connect("pressed", () => {
           const player = mediaState.get().lastPlayer;
           if (player) {
             try {
               player.play_pause();
-              setTimeout(() => executeUpdateMediaState(player), 100);
+              // Use GLib.timeout_add em vez de setTimeout
+              GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                executeUpdateMediaState(player);
+                return GLib.SOURCE_REMOVE;
+              });
             } catch (error) {
               console.warn("Erro ao pausar/tocar:", error);
             }
           }
         });
         self.add_controller(click);
+
+        (self as any)._clickHandler = clickHandler;
+        (self as any)._clickController = click;
       }}
       onDestroy={() => {
         disconnectFromPlayer();
         mediaState.drop();
-        mprisHandlers.forEach(h => mpris.disconnect(h));
+
+        mprisHandlers.forEach(h => {
+          if (GObject.signal_handler_is_connected(mpris, h)) {
+            mpris.disconnect(h);
+          }
+        });
+        mprisHandlers = [];
+
+        if (updateTimeout) {
+          GLib.source_remove(updateTimeout);
+          updateTimeout = null;
+        }
       }}
     >
       <CavaContainer />
